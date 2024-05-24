@@ -4,6 +4,7 @@ import uvicorn
 import io
 from prediction import read_image, predict, process_image
 
+
 app = FastAPI()
 
 # @app.get('/')
@@ -12,13 +13,24 @@ app = FastAPI()
 
 
 @app.post('/post-image')
-async def predict_image(file: UploadFile = File()):
+
+# async def create_file(file: Annotated[UploadFile, File()]):
+
+#     contents = await file.read()
+
+#     image = process_image(contents)
+#     predictions = predict(image)
+
+#     return  {"predictions": predictions} # {
+#     #     "file_size": len(file),
+#     #     "token": token,
+#     #     "fileb_content_type": fileb.content_type,
+#     # }
+async def predict_image(file: UploadFile = File(...)):
     try:
         # Read the file uploaded by the user
-        print(file)
         contents = await file.read()
         image = await read_image(io.BytesIO(contents))
-        print(image)
 
         # Apply preprocessing
         image = process_image(image)

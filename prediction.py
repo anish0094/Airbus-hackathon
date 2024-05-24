@@ -1,12 +1,12 @@
-from PIL import Image
 from io import BytesIO
-import numpy as np
+
 import tensorflow as tf
 import tensorflow_hub as hub
+from fastapi import UploadFile
 from tensorflow import keras
-from fastapi import UploadFile, File
 
 IMG_SIZE = 224
+
 
 class CustomLayer(keras.layers.Layer):
     def __init__(self, sublayer, **kwargs):
@@ -63,33 +63,67 @@ model = load_model("20240522-10471716374835-full-image-set-mobilenetv2-Adam.h5")
   
 async def read_image(file: UploadFile):
     try:
-        image = ...
-        if image is None:
-            raise ValueError(f"Failed to read image from file {file.filename}")
-        print(image)
+        # Read the uploaded image into a PIL Image object
+        contents = file.read()
+        image = Image.open(BytesIO(contents))
         return image
     except Exception as e:
-        print(f"Error reading image file {file.filename}: {e}")
+        print(f"Error reading image file ")
         raise
+
 
 # def read_image(image_encoded):
 #     pil_Image = Image.open(BytesIO(image_encoded))
 #     return pil_Image
 
-def process_image(image_path):
-  """
-  Takes an image file path and turn the image into a Tensor.
-  """
-  # Read in an image file
-  image = tf.io.read_file(image_path)
-  # Turn the jpeg image into numerical Tensor with 3 colour channels(Res, Green, Blue)
-  image = tf.image.decode_jpeg(image, channels=3)
-  # Convert the colour channels values from 0-255 to 0-1 values
-  image = tf.image.convert_image_dtype(image, tf.float32)
-  # Resize the image to our desired value(224, 224)
-  image = tf.image.resize(image, size=[IMG_SIZE, IMG_SIZE])
 
-  return image
+import tensorflow as tf
+from PIL import Image
+import tempfile
+import os
+
+
+def process_image(pil_image):
+    """
+    Takes a PIL Image object and turns the image into a Tensor.
+
+    Args:
+        pil_image (PIL.Image.Image): A PIL Image object.
+
+    Returns:
+        tf.Tensor: The processed image tensor.
+    """
+    try:
+        # Save the PIL Image object to a temporary file
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as temp_file:
+            pil_image.save(temp_file.name)
+            temp_file_path = temp_file.name
+
+        # Read in the image file
+        image = tf.io.read_file(temp_file_path)
+        # print(image)
+
+        # Decode the PNG image into a tensor with 3 color channels (Red, Green, Blue)
+        # Note: Since the image is saved as PNG, we decode it as such
+        image = tf.image.decode_png(image, channels=3)
+
+        # Convert the color channel values from 0-255 to 0-1 values
+        image = tf.cast(image, tf.float32) / 255.0
+
+        # Resize the image to our desired value (224, 224)
+        image = tf.image.resize(image, size=[IMG_SIZE, IMG_SIZE])
+
+        # Add a batch dimension
+        image = tf.expand_dims(image, 0)
+
+        # Clean up the temporary file
+        os.unlink(temp_file_path)
+
+        return image
+    except Exception as e:
+        print(f"An error occurred while processing the image: {e}")
+        return None  # Or handle the error as appropriate for your application
+
 
 # def process_image(pil_image):
 #     """
@@ -115,6 +149,7 @@ def process_image(image_path):
 #     return image
 
 
-
-def predict(image : np.ndarray):
+def predict(image: tf.float32):
+    tf.convert_to_tensor(image, tf.float32)
+    # Make prediction
     model.predict(image)
