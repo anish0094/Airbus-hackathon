@@ -63,18 +63,17 @@ model = load_model("20240522-10471716374835-full-image-set-mobilenetv2-Adam.h5")
   
 async def read_image(file: UploadFile):
     try:
-        image = ...
-        if image is None:
-            raise ValueError(f"Failed to read image from file {file.filename}")
-        print(image)
+        # Read the uploaded image into a PIL Image object
+        contents = file.read()
+        image = Image.open(BytesIO(contents))
         return image
     except Exception as e:
-        print(f"Error reading image file {file.filename}: {e}")
+        print(f"Error reading image file ")
         raise
-
 # def read_image(image_encoded):
 #     pil_Image = Image.open(BytesIO(image_encoded))
 #     return pil_Image
+
 
 def process_image(image_path):
   """
@@ -84,10 +83,13 @@ def process_image(image_path):
   image = tf.io.read_file(image_path)
   # Turn the jpeg image into numerical Tensor with 3 colour channels(Res, Green, Blue)
   image = tf.image.decode_jpeg(image, channels=3)
+  print(image.element_spec)
   # Convert the colour channels values from 0-255 to 0-1 values
-  image = tf.image.convert_image_dtype(image, tf.float32)
+  image = tf.constant(image, dtype=tf.float32)
   # Resize the image to our desired value(224, 224)
   image = tf.image.resize(image, size=[IMG_SIZE, IMG_SIZE])
+  # Add a batch dimension
+  image = tf.expand_dims(image, 0)
 
   return image
 
@@ -116,5 +118,7 @@ def process_image(image_path):
 
 
 
-def predict(image : np.ndarray):
+def predict(image : tf.float32):
+    tf.convert_to_tensor(image, tf.float32)
+    # Make prediction
     model.predict(image)
