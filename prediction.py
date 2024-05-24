@@ -4,6 +4,9 @@ import tensorflow as tf
 import tensorflow_hub as hub
 from fastapi import UploadFile
 from tensorflow import keras
+from PIL import Image
+import tempfile
+import os
 
 IMG_SIZE = 224
 
@@ -71,16 +74,12 @@ async def read_image(file: UploadFile):
         print(f"Error reading image file ")
         raise
 
-
 # def read_image(image_encoded):
 #     pil_Image = Image.open(BytesIO(image_encoded))
 #     return pil_Image
 
 
-import tensorflow as tf
-from PIL import Image
-import tempfile
-import os
+
 
 
 def process_image(pil_image):
@@ -125,6 +124,7 @@ def process_image(pil_image):
         return None  # Or handle the error as appropriate for your application
 
 
+
 # def process_image(pil_image):
 #     """
 #     Takes a PIL Image object and turns it into a Tensor suitable for input into MobileNetV2.
@@ -149,7 +149,8 @@ def process_image(pil_image):
 #     return image
 
 
-def predict(image: tf.float32):
+
+def predict(image : tf.float32):
     tf.convert_to_tensor(image, tf.float32)
     # Make prediction
     model.predict(image)
